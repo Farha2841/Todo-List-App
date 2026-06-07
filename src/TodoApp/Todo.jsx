@@ -1,75 +1,136 @@
-import React,{useState} from 'react'
-import './Todo.css'
-import { MdDelete } from "react-icons/md";
-
+import React, { useState, useEffect } from "react";
+import "./Todo.css";
 
 const Todo = () => {
-    const [todo,setTodos] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [input, setInput] = useState("");
+  const [editId, setEditId] = useState(null);
 
-    const [input,setInput] = useState("");
+  useEffect(() => {
+    const savedTasks = JSON.parse(localStorage.getItem("tasks"));
 
-    const handleAddTodo = (e) => {
-        e.preventDefault();
-
-        if(!input.trim()) return;
-
-        const newTodo = {
-            id: Date.now(),
-            text: input.trim(),
-            completed: false,
-        }
-        setTodos([...todo,newTodo])
-        setInput("")
+    if (savedTasks) {
+      setTasks(savedTasks);
     }
+  }, []);
 
-    const toggleComplete = (id) => {
-        setTodos(
-            todo.map((t) => 
-            t.id === id? {...t,completed: !t.completed} : t)
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!input.trim()) return;
+
+    if (editId) {
+      setTasks(
+        tasks.map((task) =>
+          task.id === editId ? { ...task, text: input }: task
         )
+      );
+
+      setEditId(null);
+    } else {
+      const newTask = {
+        id: Date.now(),
+        text: input,
+        completed: false,
+      };
+
+      setTasks([...tasks, newTask]);
     }
 
-    const handleDelete = (id) => {
-        setTodos(todo.filter((t) => t.id !== id))
-    }
+    setInput("");
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const editTask = (task) => {
+    setInput(task.text);
+    setEditId(task.id);
+  };
+
+  const toggleComplete = (id) => {
+    setTasks(
+      tasks.map((task) => 
+        task.id === id ? {
+              ...task,
+              completed: !task.completed,
+            }: task
+      )
+    );
+  };
+
   return (
-    <div>
-        <div className="todo-container">
-            <h1>Todo List</h1>
-        </div>
+    <div className="app">
+      <div className="todo-container">
+        <h1>Todo List</h1>
 
-        <form action="#" onSubmit = {handleAddTodo}>
-            <input type="text" placeholder="Add new task" value={input} onChange={(e) => setInput(e.target.value)}/>
-            <button type="submit">Add Task</button>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Enter task"
+            value={input}
+            onChange={(e) =>
+              setInput(e.target.value)
+            }
+          />
+
+          <button type="submit">
+            {editId ? "Update" : "Add"}
+          </button>
         </form>
 
         <ul className="todo-list">
-            {todo.map((todo) => (
+          {tasks.map((task) => (
             <li
-                 key={todo.id}
-                className={todo.completed ? "completed" : ""} >
-                <span>{todo.text}</span>
-
-            <div className="btn-group">
-            <button
-            className="complete-btn"
-            onClick={() => toggleComplete(todo.id)}
+              key={task.id}
+              className={
+                task.completed
+                  ? "completed"
+                  : ""
+              }
             >
-            {todo.completed ? "Undo" : "Complete"}
-            </button>
+              <div className="task-left">
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() =>
+                    toggleComplete(task.id)
+                  }
+                />
 
-            <button
-            className="delete-btn"
-            onClick={() => handleDelete(todo.id)}
-            >
-            <MdDelete />
-            </button>
-            </div>
-    </li>
-  ))}
+                <span>{task.text}</span>
+              </div>
+
+              <div className="buttons">
+                <button
+                  className="edit-btn"
+                  onClick={() =>
+                    editTask(task)
+                  }
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() =>
+                    deleteTask(task.id)
+                  }
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
         </ul>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default Todo
+export default Todo;
